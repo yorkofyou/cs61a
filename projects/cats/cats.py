@@ -1,5 +1,6 @@
 """Typing test implementation"""
 
+from os import remove
 from utils import *
 from ucb import main, interact, trace
 from datetime import datetime
@@ -92,6 +93,12 @@ def autocorrect(user_word, valid_words, diff_function, limit):
     """
     # BEGIN PROBLEM 5
     "*** YOUR CODE HERE ***"
+    if user_word in valid_words:
+        return user_word
+    ret, lowest = min([(word, diff_function(user_word, word, limit)) for word in valid_words], key=lambda x: x[1])
+    if lowest > limit:
+        ret = user_word
+    return ret
     # END PROBLEM 5
 
 
@@ -101,30 +108,42 @@ def shifty_shifts(start, goal, limit):
     their lengths.
     """
     # BEGIN PROBLEM 6
-    assert False, 'Remove this line'
+    if limit < 0:
+        return 1
+    elif len(start) == 0 or len(goal) == 0:
+        return abs(len(start) - len(goal))
+    elif start[0] != goal[0]:
+        return 1 + shifty_shifts(start[1:], goal[1:], limit-1)
+    else:
+        return shifty_shifts(start[1:], goal[1:], limit)
     # END PROBLEM 6
 
 
 def meowstake_matches(start, goal, limit):
     """A diff function that computes the edit distance from START to GOAL."""
-    assert False, 'Remove this line'
 
-    if ______________: # Fill in the condition
+    if limit < 0: # Fill in the condition
         # BEGIN
         "*** YOUR CODE HERE ***"
+        return 1
         # END
 
-    elif ___________: # Feel free to remove or add additional cases
+    elif len(start) == 0 or len(goal) == 0: # Feel free to remove or add additional cases
         # BEGIN
         "*** YOUR CODE HERE ***"
+        return abs(len(start) - len(goal))
         # END
+    
+    elif start[0] == goal[0]:
+        return meowstake_matches(start[1:], goal[1:], limit)
 
     else:
-        add_diff = ...  # Fill in these lines
-        remove_diff = ... 
-        substitute_diff = ... 
+        add_diff = 1 + meowstake_matches(start, goal[1:], limit-1)  # Fill in these lines
+        remove_diff = 1 + meowstake_matches(start[1:], goal, limit-1) 
+        substitute_diff = 1 + meowstake_matches(start[1:], goal[1:], limit-1) 
         # BEGIN
         "*** YOUR CODE HERE ***"
+        return min(add_diff, remove_diff, substitute_diff)
         # END
 
 
@@ -142,6 +161,15 @@ def report_progress(typed, prompt, id, send):
     """Send a report of your id and progress so far to the multiplayer server."""
     # BEGIN PROBLEM 8
     "*** YOUR CODE HERE ***"
+    correct = 0
+    for typed_word, prompt_word in zip(typed, prompt):
+        if typed_word == prompt_word:
+            correct += 1
+        else:
+            break
+    progress = correct / len(prompt)
+    send({'id': id, 'progress': progress})
+    return progress
     # END PROBLEM 8
 
 
@@ -168,6 +196,13 @@ def time_per_word(times_per_player, words):
     """
     # BEGIN PROBLEM 9
     "*** YOUR CODE HERE ***"
+    time = list()
+    for time_player in times_per_player:
+        lst = list()
+        for i in range(1, len(time_player)):
+            lst.append(time_player[i] - time_player[i-1])
+        time.append(lst[:])
+    return game(words, time)
     # END PROBLEM 9
 
 
@@ -183,6 +218,11 @@ def fastest_words(game):
     words = range(len(all_words(game)))    # An index for each word
     # BEGIN PROBLEM 10
     "*** YOUR CODE HERE ***"
+    fastest = [list() for _ in range(len(players))]
+    for word in words:
+        f, _ = min([(player, time(game, player, word)) for player in players], key=lambda x: x[1])
+        fastest[f].append(word_at(game, word))
+    return fastest
     # END PROBLEM 10
 
 
@@ -238,6 +278,17 @@ def key_distance_diff(start, goal, limit):
 
     # BEGIN PROBLEM EC1
     "*** YOUR CODE HERE ***"
+    if limit < 0:
+        return float('inf')
+    elif len(start) == 0 or len(goal) == 0:
+        return abs(len(start) - len(goal))
+    elif start[0] == goal[0]:
+        return key_distance_diff(start[1:], goal[1:], limit)
+    else:
+        add_diff = 1 + key_distance_diff(start, goal[1:], limit-1)
+        remove_diff = 1 + key_distance_diff(start[1:], goal, limit-1)
+        substitute_diff = key_distance[start[0], goal[0]] + key_distance_diff(start[1:], goal[1:], limit-1)
+        return min(add_diff, remove_diff, substitute_diff)
     # END PROBLEM EC1
 
 def memo(f):
@@ -250,7 +301,9 @@ def memo(f):
         return cache[args]
     return memoized
 
+key_distance_diff = memo(key_distance_diff)
 key_distance_diff = count(key_distance_diff)
+cache = {}
 
 
 def faster_autocorrect(user_word, valid_words, diff_function, limit):
@@ -258,6 +311,15 @@ def faster_autocorrect(user_word, valid_words, diff_function, limit):
 
     # BEGIN PROBLEM EC2
     "*** YOUR CODE HERE ***"
+    if user_word in valid_words:
+        return user_word
+    if (user_word, diff_function) in cache:
+        return cache[(user_word, diff_function)]
+    ret, lowest = min([(word, diff_function(user_word, word, limit)) for word in valid_words], key=lambda x: x[1])
+    if lowest > limit:
+        ret = user_word
+    cache[(user_word, diff_function)] = ret
+    return cache[(user_word, diff_function)]
     # END PROBLEM EC2
 
 
